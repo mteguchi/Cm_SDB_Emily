@@ -1,0 +1,191 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+```{r}
+turtle_data_1 <- read.csv ( file ='data/SDB_report_2019-06-04_v1.csv', header = T)
+library(tidyverse)
+turtle_data_1 %>% filter(SCL<60) %>% count(Turtle_ID)
+turtle_data_1 %>% mutate(Size.Class = if_else(SCL > 90, 3, 
+                                                 if_else(SCL <= 90 & SCL > 60, 2, 1))) -> turtle_data2
+str(turtle_data2)
+
+```
+
+TE: Just to look at how turtle grew over time we can extract those that were caught at least twice and look at their growths:
+```{r}
+turtle_data_1 %>% group_by(Turtle_ID) %>%
+  mutate(n = n(),
+         date = as.Date(paste(Yr, Mo, Da, sep = "-"))) %>%
+  filter(n > 1) -> turtle_data_3
+
+ggplot(data = turtle_data_3) + 
+  geom_path(aes(x = date, y = SCL, group = Turtle_ID))
+
+```
+
+
+
+Need to create a date column, then start sorting size classes between years to create some histograms of number of turtles per size group per year. 
+
+TE: I show how to create a date field above. Take a look and see if that makes sense. 
+
+Could also look at number of turtles in small size class each year, and then look at what breeding area they are coming from to see where most new recruits are coming from?
+
+TE: Good question - it may be a bit difficult to determine their origins accurately... 
+
+
+```{r}
+turtle_data2 %>% group_by(Turtle_ID) %>% 
+  summarize(meanSCL = mean(SCL, na.rm=T), 
+            meanMass = mean(Weight, na.rm = T), 
+            firstSCL = first(SCL), 
+            firstMass = first(Weight),
+            lastSCL = last(SCL), 
+            lastMass = last(Weight),
+            firstDate = first(Yr), 
+            lastDate = last(Yr)) -> stats_size_data
+data.frame(stats_size_data)
+```
+Historgrams of sizes for five year chunks
+```{r}
+Years_1990_1995 <- turtle_data2 %>% group_by(Turtle_ID) %>% filter(Yr <= 1995)
+# you can also histogram SCL rather than size classes. 
+hist(Years_1990_1995$SCL)
+hist(Years_1990_1995$Size.Class)
+
+Years_1996_2000 <- turtle_data2 %>% group_by(Turtle_ID) %>% filter(Yr <= 2000) %>% filter(Yr >= 1996)
+hist(Years_1996_2000$Size.Class)
+
+Years_2001_2005 <- turtle_data2 %>% group_by(Turtle_ID) %>% filter(Yr <= 2005) %>% filter(Yr >= 2001)
+hist(Years_2001_2005$Size.Class)
+
+Years_2006_2010 <- turtle_data2 %>% group_by(Turtle_ID) %>% filter(Yr <= 2010) %>% filter(Yr >= 2006)
+hist(Years_2006_2010$Size.Class)
+
+Years_2011_2015 <- turtle_data2 %>% group_by(Turtle_ID) %>% filter(Yr <= 2015) %>% filter(Yr >= 2011)
+hist(Years_2011_2015$Size.Class)
+
+Years_2016_2019 <- turtle_data2 %>% group_by(Turtle_ID) %>% filter(Yr >= 2016)
+hist(Years_2016_2019$Size.Class)
+
+
+```
+Need to find a way to not count multiple captures of same turtle in same year?
+Break down the 2000s more, maybe year by year.
+Turtles moving up size classes or are more medium size turtles coming into the bay?
+Might be more helpful to look at percentages of turtles in each size class in each year to account for different amounts of captures each year, could also be easier to filter out multiple captures
+Looking at every two years would also even out the adult turtles leaving for breeding on a bi-annual basis
+
+TE: I don't think all adults leave the bay every other year... so be careful with this assumption. 
+
+```{r}
+turtle_data2 %>% group_by(Yr) %>% count(Turtle_ID) 
+turtle_data2 %>% group_by(Yr) %>% count(Size.Class) -> Total_size_perYear
+turtle_data2 %>% count(Yr) -> Total_perYear
+data.frame(Total_perYear)
+data.frame(Total_size_perYear)
+```
+
+
+
+```{r}
+library(ggplot2)
+#Combined histogram for turtle data from 1990-1999 due to low number of captures and complete data
+Y1990_99 <- turtle_data2 %>% group_by(Turtle_ID) %>% filter(Yr <=1999)
+qplot(Y1990_99$Size.Class, 
+      geom="histogram",
+      binwidth = 1,
+      main = "1990-1999 Size Distribution",
+      xlab="Size Class",
+      fill=I("cadetblue3"),
+      col=I("black")
+      )
+
+#size distributions for turtles in the past 10 years
+Y2018_19 <- turtle_data2 %>% group_by(Turtle_ID) %>% filter(Yr >= 2018)
+qplot(Y2018_19$Size.Class, 
+      geom="histogram",
+      binwidth = 1,
+      main = "2018-19 Size Distribution",
+      xlab="Size Class",
+      fill=I("cadetblue3"),
+      col=I("black")
+      )
+
+Y2017 <- turtle_data2 %>% group_by(Turtle_ID) %>% filter(Yr == 2017)
+qplot(Y2017$Size.Class, 
+      geom="histogram",
+      binwidth = 1,
+      main = "2017 Size Distribution",
+      xlab="Size Class",
+      fill=I("cadetblue3"),
+      col=I("black"))
+
+Y2016 <- turtle_data2 %>% group_by(Turtle_ID) %>% filter(Yr == 2016)
+qplot(Y2016$Size.Class, 
+      geom="histogram",
+      binwidth = 1,
+      main = "2016 Size Distribution",
+      xlab="Size Class",
+      fill=I("cadetblue3"),
+      col=I("black")
+      )
+
+Y2015 <- turtle_data2 %>% group_by(Turtle_ID) %>% filter(Yr == 2015)
+qplot(Y2015$Size.Class, 
+      geom="histogram",
+      binwidth = 1,
+      main = "2015 Size Distribution",
+      xlab="Size Class",
+      fill=I("cadetblue3"),
+      col=I("black")
+      )
+
+Y2014 <- turtle_data2 %>% group_by(Turtle_ID) %>% filter(Yr == 2014)
+qplot(Y2014$Size.Class, 
+      geom="histogram",
+      binwidth = 1,
+      main = "2014 Size Distribution",
+      xlab="Size Class",
+      fill=I("cadetblue3"),
+      col=I("black")
+      )
+
+Y2012_13 <- turtle_data2 %>% group_by(Turtle_ID) %>% filter(Yr >= 2012) %>% filter(Yr <= 2013)
+qplot(Y2012_13$Size.Class, 
+      geom="histogram",
+      binwidth = 1,
+      main = "2012-13 Size Distribution",
+      xlab="Size Class",
+      fill=I("cadetblue3"),
+      col=I("black")
+      )
+
+Y2011 <- turtle_data2 %>% group_by(Turtle_ID) %>% filter (Yr == 2011)
+qplot(Y2011$Size.Class, 
+      geom="histogram",
+      binwidth = 1,
+      main = "2011 Size Distribution",
+      xlab="Size Class",
+      fill=I("cadetblue3"),
+      col=I("black")
+      )
+
+Y2010 <- turtle_data2 %>% group_by(Turtle_ID) %>% filter (Yr ==2010)
+qplot(Y2010$Size.Class, 
+      geom="histogram",
+      binwidth = 1,
+      main = "2010 Size Distribution",
+      xlab="Size Class",
+      fill=I("cadetblue3"),
+      col=I("black")
+      )
+```
+
+TE: I think this is a good place to start - getting familiar with the dataset and playing with R a little.  We should start outlining the future analyses.  Here are some ideas:
+1. Try to fill in SCL (or CCL) gaps as much as possible
+2. Look at size distributions (not size class distributions) over time (blocks of 5 years, like you did?). You can use ridge plot (ggridges) to show how they might have changed over time (https://cran.r-project.org/web/packages/ggridges/vignettes/introduction.html)
+3. If there aren't enough sample sizes in 5-year blocks, we may extend to 6, 7, 8, ... years. But, probably not necessary.
+4. Are there statistical differences in the mean of sizes (SCL/CCL) over these time periods? This requires some sort of statistical analysis - a regression analysis may be useful.
+5. As you mention above, it may be good to look at how the proportion of small ones (we need to define this) changed (or not changed) over time. 
