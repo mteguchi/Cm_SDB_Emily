@@ -1,0 +1,93 @@
+---
+title: "Functions are a bit complicated... "
+output: html_notebook
+---
+
+I noticed a few things in your function NArem so here are some advice on creating functions. 
+
+```{r}
+
+rm(list=ls())
+
+# You probably need to remove data/ part for this to work. 
+Turtle_data3 <- read.csv( file ='data/SDB_report_2019-06-04_v3.csv', header = T)
+
+# extract rows with NAs in SCL
+tmp1 <- Turtle_data3[is.na(Turtle_data3$SCL),]
+summary(tmp1)
+
+
+```
+
+When using this function first, you will get an error:
+
+```{r}
+
+# this is your function - I added carriage returns to make them easier to read
+NArem <- function(x) {
+  Clean_data$SCL2 <- ifelse(!is.na(x$SCL), 
+                            x$SCL2 <- x$SCL, 
+                            ifelse(is.na(x$SCL) & !is.na(x$CCL), 
+                                   x$SCL2 <- (x$CCL-0.64)/1.06,
+                                   ifelse(is.na(x$SCL) & is.na(x$CCL) & !is.na(x$Weight), 
+                                          x$SCL2 <- (log(x$Weight)-0.94)/0.04, 
+                                          x$SCL2 <- NA)))
+  
+  return(data.frame(Clean_data)) 
+}
+
+
+NArem(tmp1)
+```
+
+This is because "Clean_data" does not exist in your function. It's best to have everything contained within each function so that the function can be used elsewhere. 
+
+So, I will fix that part first. Notice I changed the returning dataframe also:
+
+```{r}
+NArem <- function(x) {
+  x$SCL2 <- ifelse(!is.na(x$SCL), 
+                   x$SCL2 <- x$SCL, 
+                   ifelse(is.na(x$SCL) & !is.na(x$CCL), 
+                          x$SCL2 <- (x$CCL-0.64)/1.06,
+                          ifelse(is.na(x$SCL) & is.na(x$CCL) & !is.na(x$Weight), 
+                                 x$SCL2 <- (log(x$Weight)-0.94)/0.04, 
+                                 x$SCL2 <- NA)))
+  
+  return(data.frame(x)) 
+}
+
+tmp2 <- NArem(tmp1)
+
+tmp2 %>% select(SCL, CCL, Weight, SCL2)
+
+```
+
+Other thing you should fix is that you don't need <- within ifelse statements. I'm actually surprised that they worked... here is what it should look like:
+
+```{r}
+NArem <- function(x) {
+  x$SCL2 <- ifelse(!is.na(x$SCL), 
+                   x$SCL, 
+                   ifelse(is.na(x$SCL) & !is.na(x$CCL), 
+                          (x$CCL-0.64)/1.06,
+                          ifelse(is.na(x$SCL) & is.na(x$CCL) & !is.na(x$Weight), 
+                                 (log(x$Weight)-0.94)/0.04, 
+                                 NA)))
+  
+  return(x)
+}
+  
+```
+
+I also removed data.frame() at the end because x should be a dataframe to begin with. 
+
+```{r}
+
+tmp2 <- NArem(tmp1)
+tmp2 %>% select(SCL, CCL, Weight, SCL2)
+
+```
+
+That's it!
+

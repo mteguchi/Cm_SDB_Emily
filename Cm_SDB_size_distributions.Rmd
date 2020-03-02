@@ -1,0 +1,193 @@
+---
+title: "Size distributions of green turtles in SDB"
+output: html_notebook
+---
+
+```{r}
+rm(list=ls())
+library(tidyverse)
+
+```
+
+
+I saved clean data into a file so bring them in.
+
+```{r Clean 1990-99}
+Clean_data <- read.csv("data/Clean_data.csv")
+first_appearance <- Clean_data %>% group_by(Turtle_ID) %>% summarize(firstDate=first(Yr))
+
+Clean_1990_99 <- Clean_data %>% filter(Yr <= 1999)
+ggplot(data=Clean_1990_99, aes(x=SCL2)) +
+  geom_histogram(color="aquamarine4", fill="aquamarine", binwidth=5, na.rm=T)+
+  labs(title="Distribution for 1990-199", x="SCL(cm)", y="Frequency")+
+  geom_vline(aes(xintercept=mean(Clean_1990_99$SCL2, na.rm=T)), color="coral1", linetype="dashed", size=1, na.rm=T)
+
+```
+```{r Clean 2000-2004}
+Clean_2000_04 <- Clean_data %>% filter(Yr >=2000) %>% filter (Yr <=2004)
+ggplot(data=Clean_2000_04, aes(x=SCL2)) +
+  geom_histogram(color="aquamarine4", fill="aquamarine", binwidth=5, na.rm=T)+
+  labs(title="Distribution for 2000-2004", x="SCL(cm)", y="Frequency")+
+  geom_vline(aes(xintercept=mean(Clean_2000_04$SCL2, na.rm=T)), color="coral1", linetype="dashed", size=1, na.rm=T)
+
+```
+
+```{r Clean 2005-2009}
+Clean_2005_09 <- Clean_data %>% filter(Yr >=2005) %>% filter (Yr <=2009)
+ggplot(data=Clean_2005_09, aes(x=SCL2)) +
+  geom_histogram(color="aquamarine4", fill="aquamarine", binwidth=5, na.rm=T)+
+  labs(title="Distribution for 2005-2009", x="SCL(cm)", y="Frequency")+
+  geom_vline(aes(xintercept=mean(Clean_2005_09$SCL2, na.rm=T)), color="coral1", linetype="dashed", size=1, na.rm=T)
+
+
+```
+
+```{r Clean 2010-2014}
+Clean_2010_14 <- Clean_data %>% filter(Yr >=2010) %>% filter (Yr <=2014)
+ggplot(data=Clean_2010_14, aes(x=SCL2)) +
+  geom_histogram(color="aquamarine4", fill="aquamarine", binwidth=5, na.rm=T)+
+  labs(title="Distribution for 2010-2014", x="SCL(cm)", y="Frequency")+
+  geom_vline(aes(xintercept=mean(Clean_2010_14$SCL2, na.rm=T)), color="coral1", linetype="dashed", size=1, na.rm=T)
+
+
+```
+```{r Clean 2015-2019}
+Clean_2015_19 <- Clean_data %>% filter(Yr >=2015) 
+ggplot(data=Clean_2015_19, aes(x=SCL2)) +
+  geom_histogram(color="aquamarine4", fill="aquamarine", binwidth=5, na.rm=T)+
+  labs(title="Distribution for 2015-2019", x="SCL(cm)", y="Frequency")+
+  geom_vline(aes(xintercept=mean(Clean_2015_19$SCL2, na.rm=T)), color="coral1", linetype="dashed", size=1, na.rm=T)
+
+```
+```{r practice density distribution}
+ggplot(data=Clean_2015_19, aes(x=SCL2)) +
+  geom_histogram(aes(y=..density..), color="aquamarine4", fill="aquamarine", binwidth=5, na.rm=T)+
+  labs(title="Distribution for 2015-2019", x="SCL(cm)", y="Frequency")+
+  geom_vline(aes(xintercept=mean(Clean_2015_19$SCL2, na.rm=T)), color="coral1", linetype="dashed", size=1, na.rm=T)+
+  geom_density(alpha=0.3, fill="azure4", na.rm=T)
+
+```
+6/19/19-6/20/19
+How many turtles are we seeing for the first time each year? Is that increasing at all?
+```{r Newcomers}
+ggplot(data=first_appearance, aes(x=firstDate))+
+  geom_histogram(color="black", fill="coral", binwidth = 1)+
+  labs(title="First appearance of turtles by year", x="Year", y="Count")
+```
+HOw big are turtles when they first come into SDB? Could that help define what we mean by small turtles or how we look at recruitment?
+```{r size of newcomers}
+First_size <- Clean_data %>% group_by(Turtle_ID) %>% summarize(firstSCL=first(SCL2), firstCapture=first(Capture_Date), firstYear=first(Yr))
+data.frame(First_size)
+ggplot(data=First_size, aes(x=firstSCL), na.rm=T)+
+  geom_histogram(color="black", fill="coral2",binwidth=5)+
+  labs(main="Size of turtles at first appearance", x="Size(cm)", y="frequency")+
+  geom_vline(aes(xintercept=mean(First_size$firstSCL, na.rm=T)), color="blue", linetype="dashed", size=1, na.rm=T)
+```
+6/21/19
+Mean size of turtles in SDB since 1990s always falls between 80-90cm, but the number of smaller turtles increases in more recent years. How many turtles come in each year below the average size?
+```{r below average turtles by year}
+Clean_data %>% group_by(Turtle_ID) %>% filter(SCL2 <= 85) -> under85cm_turtles
+ggplot(data=under85cm_turtles, aes(x=Yr), na.rm=T)+
+  geom_histogram(color="black", fill="darkseagreen3", binwidth=1)+
+  labs(main="Turtles below 85cm", x="Year", y="Count")
+```
+```{r addding year groups to the data frame}
+
+Clean_data %>% mutate(Year.Group = if_else(Yr>=2015, "2015-2019",
+                                      if_else(Yr>=2010 & Yr<=2014, "2010-2014",
+                                        if_else(Yr>=2005 & Yr <= 2009, "2005-2009",
+                                           if_else(Yr>=2000 & Yr <= 2004, "2000-2004", "1990-1999"))))) -> Clean_data2
+
+```
+6/24/19
+Possibly standardize data somehow so number of captures each year doesn't affect patterns?
+First, count how many captures are in each year group:
+```{r captures per year group}
+Clean_data2 %>% count(Year.Group)
+```
+Look at mean size, high and low values for each group, maybe look at what percentage of the captures for that group are below the average, and percentage of new captures?
+```{r year group summary}
+Clean_data2 %>% group_by(Year.Group) %>% 
+  summarize(meanSCL = mean(SCL2, na.rm=T), 
+           maxSCL = max(SCL2, na.rm=T),
+           minSCL =min(SCL2, na.rm = T)) -> stats_yeargroup
+data.frame(stats_yeargroup)
+```
+```{r year.group boxplot}
+ggplot(data=Clean_data2, aes(Year.Group, SCL2), na.rm=T)+
+geom_boxplot(na.rm = T)+
+  labs( x="Year Group", y="SCL(cm)")
+
+#really just for practice making a box plot
+```
+Facet and ridge plots
+Make plots of just first captures to exclude growing turtles
+```{r facet plot of all data}
+ggplot(data=Clean_data2, aes(x = SCL2), na.rm= T)+
+  geom_histogram(binwidth=5, color="black", fill="cadetblue3", na.rm=T)+
+  facet_wrap(Year.Group ~ ., ncol =1)
+```
+```{r dataset of first captures}
+firstcap_only <- Clean_data2 %>% group_by(Turtle_ID) %>% summarize(firstCap = first(Capture_Date),
+                                                                   firstGroup = first(Year.Group),
+                                                                   firstSCL = first(SCL2))
+data.frame(firstcap_only)
+
+ggplot(data=firstcap_only, aes(x = firstSCL), na.rm= T)+
+  geom_histogram(binwidth=5, color="black", fill="cadetblue3", na.rm=T)+
+  facet_grid(firstGroup ~ .)
+```
+
+```{r ridge plot of first captures}
+library(ggridges)
+ggplot(data=firstcap_only, aes(x=firstSCL, y=firstGroup), na.rm =T)+
+  geom_density_ridges(scale=1, fill="cadetblue2")+
+  labs(main="Change in size distribution", x="SCL(cm)", y="Year")
+```
+There is more of a visible change in the distribution when only looking at the first capture of each turtle. The curve covering the smaller turtles increases as the larger turtles decrease.
+```{r histogram with proportions}
+firstcap_only %>% mutate(SCL.Group = if_else(firstSCL<=45, 40,
+                                      if_else(firstSCL > 45 & firstSCL<=50, 45,
+                                      if_else(firstSCL >50 & firstSCL <= 55, 50,
+                                      if_else(firstSCL>55 & firstSCL <= 60, 55, 
+                                      if_else(firstSCL>60 & firstSCL <= 65, 60,
+                                      if_else(firstSCL>65 & firstSCL <= 70, 65,
+                                      if_else(firstSCL>70 & firstSCL <= 75, 70,
+                                      if_else(firstSCL>75 & firstSCL <= 80, 75,
+                                      if_else(firstSCL>80 & firstSCL <= 85, 80,
+                                      if_else(firstSCL>85 & firstSCL <= 90, 85,
+                                      if_else(firstSCL>90 & firstSCL <= 95, 90,
+                                      if_else(firstSCL>95 & firstSCL <= 100, 95,
+                            if_else(firstSCL>100 & firstSCL <= 105, 100, 105)))))))))))))) -> first_cap2
+
+
+first_cap2$SCL.group=as.numeric(first_cap2$SCL.Group)
+library(scales)
+ggplot(data=first_cap2, aes(x=SCL.Group))+
+  #geom_bar(aes(y = ..prop..)) + 
+  facet_grid(firstGroup ~ .)+
+  geom_bar(aes(y = (..count..)))
+  #geom_bar(aes(y = (..count..)/sum(..count..)))+
+  #facet_grid(firstGroup ~ .)+
+  scale_y_continuous(labels= percent_format())
+
+ggplot(data=first_cap2, aes(x=SCL.Group))+
+  facet_grid(firstGroup ~ .)+
+  geom_bar(aes(y = ..prop..)) + 
+  #geom_bar(aes(y = (..count..)/sum(..count..)))+
+  #facet_grid(firstGroup ~ .)+
+  scale_y_continuous(labels= percent_format())
+
+first_1990_99 <- first_cap2 %>% filter(firstGroup == "1990-1999")
+ggplot(data=first_1990_99, aes(x=SCL.Group))+
+  #geom_bar(aes(y = ..prop..))
+  geom_bar(aes(y = (..count..)/sum(..count..)))
+
+
+#ggplot(data=firstcap_only, aes(x=firstSCL, y=firstGroup), na.rm=T)+
+ # geom_histogram(binwidth=5, color="black", fill="cadetblue3", na.rm=T, aes(y=..density..))+
+  #facet_grid(firstGroup ~ .) +
+  #scale_y_continuous(labels = percent_format())
+#returns same graph as before but with relabeled y-axis
+```
+Not sure if this is correct, as it seems to have done proportion out of entire data set rather than the year group

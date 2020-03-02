@@ -1,0 +1,613 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+```{r Read in data}
+turtle_data_1 <- read.csv ( file ='SDB_report_2019-06-04_v1.csv', header = T)
+library(tidyverse)
+turtle_data_1 %>% filter(SCL<60) %>% count(Turtle_ID)
+turtle_data_1 %>% mutate(Size.Class = if_else(SCL > 90, 3, 
+                                                 if_else(SCL <= 90 & SCL > 60, 2, 1))) -> turtle_data2
+str(turtle_data2)
+
+```
+Need to create a date column, then start sorting size classes between years to create some histograms of number of turtles per size group per year. 
+Could also look at number of turtles in small size class each year, and then look at what breeding area they are coming from to see where most new recruits are coming from?
+
+```{r Summary of data}
+turtle_data2 %>% group_by(Turtle_ID) %>% 
+  summarize(meanSCL = mean(SCL, na.rm=T), 
+            meanMass = mean(Weight, na.rm = T), 
+            firstSCL = first(SCL), 
+            firstMass = first(Weight),
+            lastSCL = last(SCL), 
+            lastMass = last(Weight),
+            firstDate = first(Yr), 
+            lastDate = last(Yr)) -> stats_size_data
+data.frame(stats_size_data)
+```
+Historgrams of sizes for five year chunks
+```{r FIve year histograms}
+Years_1990_1995 <- turtle_data2 %>% group_by(Turtle_ID) %>% filter(Yr <= 1995)
+hist(Years_1990_1995$Size.Class)
+
+Years_1996_2000 <- turtle_data2 %>% group_by(Turtle_ID) %>% filter(Yr <= 2000) %>% filter(Yr >= 1996)
+hist(Years_1996_2000$Size.Class)
+
+Years_2001_2005 <- turtle_data2 %>% group_by(Turtle_ID) %>% filter(Yr <= 2005) %>% filter(Yr >= 2001)
+hist(Years_2001_2005$Size.Class)
+
+Years_2006_2010 <- turtle_data2 %>% group_by(Turtle_ID) %>% filter(Yr <= 2010) %>% filter(Yr >= 2006)
+hist(Years_2006_2010$Size.Class)
+
+Years_2011_2015 <- turtle_data2 %>% group_by(Turtle_ID) %>% filter(Yr <= 2015) %>% filter(Yr >= 2011)
+hist(Years_2011_2015$Size.Class)
+
+Years_2016_2019 <- turtle_data2 %>% group_by(Turtle_ID) %>% filter(Yr >= 2016)
+hist(Years_2016_2019$Size.Class)
+
+
+```
+Need to find a way to not count multiple captures of same turtle in same year?
+Break down the 2000s more, maybe year by year.
+Turtles moving up size classes or are more medium size turtles coming into the bay?
+Might be more helpful to look at percentages of turtles in each size class in each year to account for different amounts of captures each year, could also be easier to filter out multiple captures
+Looking at every two years would also even out the adult turtles leaving for breeding on a bi-annual basis
+```{r Counts by year and ID}
+turtle_data2 %>% group_by(Yr) %>% count(Turtle_ID) 
+turtle_data2 %>% group_by(Yr) %>% count(Size.Class) -> Total_size_perYear
+turtle_data2 %>% count(Yr) -> Total_perYear
+data.frame(Total_perYear)
+data.frame(Total_size_perYear)
+```
+```{r Individual histograms}
+library(ggplot2)
+#Combined histogram for turtle data from 1990-1999 due to low number of captures and complete data
+Y1990_99 <- turtle_data2 %>% group_by(Turtle_ID) %>% filter(Yr <=1999)
+qplot(Y1990_99$Size.Class, 
+      geom="histogram",
+      binwidth = 1,
+      main = "1990-1999 Size Distribution",
+      xlab="Size Class",
+      fill=I("cadetblue3"),
+      col=I("black")
+      )
+
+#size distributions for turtles in the past 10 years
+Y2018_19 <- turtle_data2 %>% group_by(Turtle_ID) %>% filter(Yr >= 2018)
+qplot(Y2018_19$Size.Class, 
+      geom="histogram",
+      binwidth = 1,
+      main = "2018-19 Size Distribution",
+      xlab="Size Class",
+      fill=I("cadetblue3"),
+      col=I("black")
+      )
+
+Y2017 <- turtle_data2 %>% group_by(Turtle_ID) %>% filter(Yr == 2017)
+qplot(Y2017$Size.Class, 
+      geom="histogram",
+      binwidth = 1,
+      main = "2017 Size Distribution",
+      xlab="Size Class",
+      fill=I("cadetblue3"),
+      col=I("black"))
+
+Y2016 <- turtle_data2 %>% group_by(Turtle_ID) %>% filter(Yr == 2016)
+qplot(Y2016$Size.Class, 
+      geom="histogram",
+      binwidth = 1,
+      main = "2016 Size Distribution",
+      xlab="Size Class",
+      fill=I("cadetblue3"),
+      col=I("black")
+      )
+
+Y2015 <- turtle_data2 %>% group_by(Turtle_ID) %>% filter(Yr == 2015)
+qplot(Y2015$Size.Class, 
+      geom="histogram",
+      binwidth = 1,
+      main = "2015 Size Distribution",
+      xlab="Size Class",
+      fill=I("cadetblue3"),
+      col=I("black")
+      )
+
+Y2014 <- turtle_data2 %>% group_by(Turtle_ID) %>% filter(Yr == 2014)
+qplot(Y2014$Size.Class, 
+      geom="histogram",
+      binwidth = 1,
+      main = "2014 Size Distribution",
+      xlab="Size Class",
+      fill=I("cadetblue3"),
+      col=I("black")
+      )
+
+Y2012_13 <- turtle_data2 %>% group_by(Turtle_ID) %>% filter(Yr >= 2012) %>% filter(Yr <= 2013)
+qplot(Y2012_13$Size.Class, 
+      geom="histogram",
+      binwidth = 1,
+      main = "2012-13 Size Distribution",
+      xlab="Size Class",
+      fill=I("cadetblue3"),
+      col=I("black")
+      )
+
+Y2011 <- turtle_data2 %>% group_by(Turtle_ID) %>% filter (Yr == 2011)
+qplot(Y2011$Size.Class, 
+      geom="histogram",
+      binwidth = 1,
+      main = "2011 Size Distribution",
+      xlab="Size Class",
+      fill=I("cadetblue3"),
+      col=I("black")
+      )
+
+Y2010 <- turtle_data2 %>% group_by(Turtle_ID) %>% filter (Yr ==2010)
+qplot(Y2010$Size.Class, 
+      geom="histogram",
+      binwidth = 1,
+      main = "2010 Size Distribution",
+      xlab="Size Class",
+      fill=I("cadetblue3"),
+      col=I("black")
+      )
+
+```
+Maybe compare number of turltes in 2 and 3 size class separated by year to look at changes easier?
+
+```{r Size class histograms}
+Sizeclass2 <- turtle_data2 %>% filter(Size.Class==2)
+qplot(Sizeclass2$Yr,
+      geom="histogram",
+      binwidth=1,
+      main="Subadult (60-90cm) Turtle distribution from 1990-2019",
+      xlab="Year",
+      fill=I("coral1"),
+      col=I("black"),
+      alpha=I(0.4))
+
+Sizeclass3 <- turtle_data2 %>% filter(Size.Class == 3)
+qplot(Sizeclass3$Yr,
+      geom="histogram",
+      binwidth=1,
+      main="Adult (>90cm) Turtle distribution from 1990-2019",
+      xlab="Year",
+      fill=I("coral1"),
+      col=I("black"),
+      alpha=I(0.4))
+Sizeclass1 <- turtle_data2 %>% filter(Size.Class == 1)
+qplot(Sizeclass1$Yr,
+      geom="histogram",
+      binwidth=1,
+      main="Juvenile (<60cm) Turtle distribution from 1990-2019",
+      xlab="Year",
+      fill=I("coral1"),
+      col=I("black"),
+      alpha=I(0.4))
+```
+Are new turtles coming into the population? How many new turtles appeared each year
+```{r new turtles}
+first_appearance <- turtle_data2 %>% group_by(Turtle_ID) %>% summarize(firstDate=first(Yr))
+data.frame(first_appearance)
+first_appearance %>% count(firstDate)
+```
+6/11/19: Fill in NA in SCL columns by eithe rusing previous capture data within one month, or using linear interpolation
+Also create distributions using raw length data rather than size class
+```{r plot raw SCL data}
+Turtle_data3 <- read.csv( file ='SDB_report_2019-06-04_v3.csv', header = T)
+#data3 has NAs replaced with data within one month of that capture
+Raw_2017_19 <- Turtle_data3 %>% filter(Yr >= 2017)
+qplot(Raw_2017_19$SCL,
+      geom="histogram",
+      binwidth=5,
+      main="SCL distirbution for 2017-19",
+      xlab="SCL(cm)",
+      fill=I("olivedrab3"),
+      col=I("black"),
+      alpha=I(0.5))
+
+Raw_1990_99 <- Turtle_data3 %>% filter(Yr <= 1999)
+qplot(Raw_1990_99$SCL,
+      geom="histogram",
+      binwidth=5,
+      main="SCL distirbution for 1990-99",
+      xlab="SCL(cm)",
+      fill=I("olivedrab3"),
+      col=I("black"),
+      alpha=I(0.5))
+
+Raw_2000_05 <- Turtle_data3 %>% filter(Yr <= 2005) %>% filter(Yr >= 2000)
+qplot(Raw_2000_05$SCL,
+      geom="histogram",
+      binwidth=5,
+      main="SCL distirbution for 2000-05",
+      xlab="SCL(cm)",
+      fill=I("olivedrab3"),
+      col=I("black"),
+      alpha=I(0.5))
+
+Raw_2006_10 <- Turtle_data3 %>% filter(Yr <= 2010) %>% filter(Yr >= 2006)
+qplot(Raw_2006_10$SCL,
+      geom="histogram",
+      binwidth=5,
+      main="SCL distirbution for 2006-10",
+      xlab="SCL(cm)",
+      fill=I("olivedrab3"),
+      col=I("black"),
+      alpha=I(0.5))
+
+Raw_2011_16 <- Turtle_data3 %>% filter(Yr <= 2016) %>% filter(Yr >= 2011)
+qplot(Raw_2011_16$SCL,
+      geom="histogram",
+      binwidth=5,
+      main="SCL distirbution for 2011-16",
+      xlab="SCL(cm)",
+      fill=I("olivedrab3"),
+      col=I("black"),
+      alpha=I(0.5))
+#Using the raw data does start to reveal more of a trend for a higher amount of smaller turtles coming into SDB
+```
+Still need to work on removing the NAs that were not close to another capture date.
+
+
+6/12/19
+Work on filling in NAs that weren't close to another capture date
+6/13/19
+Further work on the linear interpolation and dates
+```{r linear interpolation}
+library(lubridate)
+library(tidyverse)
+Turtle_data3$Capture_Date <- paste(Turtle_data3$Yr, Turtle_data3$Mo, Turtle_data3$Da, sep="-")
+Turtle_data3
+Turtle_data3$Capture_Date <-as.Date(Turtle_data3$Capture_Date, format= "%Y-%m-%d")
+str(Turtle_data3)
+data.frame(Turtle_data3)
+
+#From Tomo(checking difference from date column created in data3)
+Turtle_data3 %>% group_by(Turtle_ID) %>%
+  mutate(n = n(),
+         date = as.Date(paste(Yr, Mo, Da, sep = "-"))) %>%
+  filter(n > 1) -> turtle_data_4
+
+turtle_data_4
+
+ggplot(data = turtle_data_4) + 
+  geom_path(aes(x = date, y = SCL, group = Turtle_ID))
+
+#linear interpolation from workshop
+turtle126277750A <- subset(Turtle_data3, 
+                     Turtle_ID == "126277750A")
+turtle126277750A
+ggplot(data = turtle126277750A) +
+   geom_point(aes(x = Capture_Date, y = SCL)) + 
+  geom_line(aes(x = Capture_Date, y = SCL), na.rm = T) + 
+  labs(x = "Date", y = "SCL (cm)")
+
+turtle126277750A <- mutate(turtle126277750A, NumDays = Capture_Date - Capture_Date[1])
+
+known_SCLs <- filter(turtle126277750A, 
+                     Capture_Date == as.Date("2009-11-17") |
+                      Capture_Date == as.Date("2009-01-08"))
+
+dif_SCL <- known_SCLs[2, 'SCL'] - known_SCLs[1, "SCL"] #make sure to match rows of known_SCL dataset vs turtle dataset
+
+dif_days <- known_SCLs[2, 'Capture_Date'] - known_SCLs[1, "Capture_Date"]
+
+dif_days2 <- turtle126277750A[4, "Capture_Date"] - as.Date("2009-01-08")
+
+growth <- as.numeric(dif_days2) * dif_SCL/as.numeric(dif_days)
+
+interp_SCL <- turtle126277750A[3, "SCL"] + growth
+
+turtle126277750A[4, "SCL"  ] <- interp_SCL
+
+ggplot(data = turtle126277750A) + 
+  geom_point(aes(x = Capture_Date, y = SCL)) + 
+  geom_line(aes(x = Capture_Date, y = SCL), na.rm = T) + 
+  labs(x = "Date", y = "SCL (cm)")
+
+
+
+```
+
+```{r Try 2 for linear interpolation}
+turtleLB308 <- subset(Turtle_data3, 
+                     Turtle_ID == "LB308")
+turtleLB308
+ggplot(data = turtleLB308) +
+   geom_point(aes(x = Capture_Date, y = SCL)) + 
+  geom_line(aes(x = Capture_Date, y = SCL), na.rm = T) + 
+  labs(x = "Date", y = "SCL (cm)")
+
+turtleLB308 <- mutate(turtleLB308, NumDays = Capture_Date - Capture_Date[1])
+
+known_SCLs <- filter(turtleLB308, 
+                     Capture_Date == as.Date("2004-11-30") |
+                      Capture_Date == as.Date("2002-12-10"))
+
+dif_SCL <- known_SCLs[2, 'SCL'] - known_SCLs[1, "SCL"]
+
+dif_days <- known_SCLs[2, 'Capture_Date'] - known_SCLs[1, "Capture_Date"]
+
+dif_days2 <- turtleLB308[2, "Capture_Date"] - as.Date("2002-12-10")
+
+growth <- as.numeric(dif_days2) * dif_SCL/as.numeric(dif_days)
+
+interp_SCL <- turtleLB308[1, "SCL"] + growth
+
+turtleLB308[2, "SCL"  ] <- interp_SCL
+
+ggplot(data =turtleLB308) + 
+  geom_point(aes(x = Capture_Date, y = SCL)) + 
+  geom_line(aes(x = Capture_Date, y = SCL), na.rm = T) + 
+  labs(x = "Date", y = "SCL (cm)")
+```
+Create a function to look for NAs in SCL and use a regression equation to convert weight or CCL to SCL, then use linear interpolation if no other options. 
+6/15/19
+Metric regression equations from Eguchi et al, 2012.
+CCL=0.64 + 1.06*SCL
+ln(weight)=0.96+0.04*SCL
+SCW = 10.11 + 0.63*SCL
+Need to get function to recognize that SCL is NA, then recognize whether CCL is NA and use equation to solve for SCL from CCL, and if not, look for if weight is NA, then solve for SCL from weight, and then go to linear interpolation if those are both NA.
+LInear interpolation will need to pull the values from before and after, then go through calculations from before and replace the empty value,
+and if it was the only capture or the dates are too far apart, then omit the NA as data that can't be used.
+Use GK39 and GK7 for practice getting CCL and Weight converted to SCL through the function
+
+Maybe use a for loop to run through the entire dataset and save the new SCLs in a separate column 
+6/17/19
+Figure out why code isn't working when run together
+```{r NA function}
+Clean_data<-Turtle_data3
+
+Clean_data$NMFS_Tag <- Clean_data$PIT_LFF <- Clean_data$PIT_RFF <- Clean_data$Tag_LFF <- Clean_data$Tag_RFF <-NULL 
+
+#r= subset(Clean_data, Turtle_ID == "GK39")
+#y = subset(Clean_data, Turtle_ID == "GK7") %>% filter(is.na(SCL) == T)
+ SCL_NA <- subset(Clean_data, is.na(SCL) == T)
+#CC2SCL <- subset(SCL_NA, is.na(CCL) ==F)
+
+#NArem <- function(x){ 
+#  if(is.na(x$SCL) == F){
+#    x$SCL == x$SCL2
+ # }else if(is.na(x$CCL) == F){
+  #New_SCL <- (x$CCL-0.64)/1.06
+   # x$SCL2 <- New_SCL
+  #} else if (is.na(x$Weight) == F){
+   #   New_SCL <- (log(x$Weight)-0.94)/0.04
+    #  x$SCL2 <- New_SCL
+  #} else {
+   # New_SCL <- "Linear Interpolation"
+#  }}
+#NArem(r)
+#NArem(y)
+
+#this works for replacing the SCL, but how to make it work in function and replace the NA in full dataset?
+#if (is.na(r$CCL) == F){
+ # New_SCL <- (r$CCL-0.64)/1.06
+  #  r$SCL <- New_SCL
+  #} else if (is.na(r$Weight) == F){
+   #   New_SCL <- (log(r$Weight)-0.94)/0.04
+    #  r$SCL <- New_SCL
+  #} else {
+   # New_SCL <- "Linear Interpolation"
+  #}
+
+Clean_data$SCL2 <-NA
+
+#for (SCL in Clean_data){ 
+#Clean_data$SCL2 <- ifelse(!is.na(Clean_data$SCL), Clean_data$SCL2 <- Clean_data$SCL, 
+ # ifelse(is.na(Clean_data$SCL) & !is.na(Clean_data$CCL), Clean_data$SCL2 <- (Clean_data$CCL-0.64)/1.06,
+  #  ifelse(is.na(Clean_data$SCL) & is.na(Clean_data$CCL) & !is.na(Clean_data$Weight), Clean_data$SCL2 <- (log(Clean_data$Weight)-0.94)/0.04, 
+   #   Clean_data$SCL2 <- "Linear Interpolation"))) }
+
+Clean_data
+
+#this function works!
+NArem <- function(x) {Clean_data$SCL2 <- ifelse(!is.na(x$SCL), x$SCL2 <- x$SCL, 
+  ifelse(is.na(x$SCL) & !is.na(x$CCL), x$SCL2 <- (x$CCL-0.64)/1.06,
+    ifelse(is.na(x$SCL) & is.na(x$CCL) & !is.na(x$Weight), x$SCL2 <- (log(x$Weight)-0.94)/0.04, 
+     x$SCL2 <- NA)))
+
+       return(data.frame(Clean_data)) }
+Clean_data <- NArem(Clean_data)
+
+Clean_data
+
+
+
+
+SCL2_NA <- subset(Clean_data, is.na(SCL2))
+data.frame(SCL2_NA)
+
+
+
+```
+Linear interpolation can be used to remove 3 of the 9 remaining NA values, one of which was done earlier. 
+Turtle_ID == LB 342, 126277750A, X116
+```{r linear interpolation LB342}
+
+turtleLB342 <- subset(Clean_data, 
+                     Turtle_ID == "LB342")
+ turtleLB342  <- mutate(turtleLB342, NumDays = Capture_Date - Capture_Date[1])
+
+known_SCLs <- filter(turtleLB342, 
+                     Capture_Date == as.Date("2006-12-05") |
+                      Capture_Date == as.Date("2008-2-15"))
+
+dif_SCL <- known_SCLs[2, 'SCL'] - known_SCLs[1, "SCL"]
+
+dif_days <- known_SCLs[2, 'Capture_Date'] - known_SCLs[1, "Capture_Date"]
+
+dif_days2 <- turtleLB342[3, "Capture_Date"] - as.Date("2006-12-05")
+
+growth <- as.numeric(dif_days2) * dif_SCL/as.numeric(dif_days)
+
+interp_SCL <- turtleLB342[2, "SCL"] + growth
+
+Clean_data$SCL2[270] <- interp_SCL
+Clean_data
+
+```
+```{r turtle126277750A}
+turtle126277750A <- subset(Turtle_data3, 
+                     Turtle_ID == "126277750A")
+turtle126277750A <- mutate(turtle126277750A, NumDays = Capture_Date - Capture_Date[1])
+
+known_SCLs <- filter(turtle126277750A, 
+                     Capture_Date == as.Date("2009-11-17") |
+                      Capture_Date == as.Date("2009-01-08"))
+
+dif_SCL <- known_SCLs[2, 'SCL'] - known_SCLs[1, "SCL"] #make sure to match rows of known_SCL dataset vs turtle dataset
+
+dif_days <- known_SCLs[2, 'Capture_Date'] - known_SCLs[1, "Capture_Date"]
+
+dif_days2 <- turtle126277750A[4, "Capture_Date"] - as.Date("2009-01-08")
+
+growth <- as.numeric(dif_days2) * dif_SCL/as.numeric(dif_days)
+
+interp_SCL2 <- turtle126277750A[3, "SCL"] + growth
+
+Clean_data$SCL2[8] <- interp_SCL2
+
+Clean_data
+```
+```{r X116}
+turtleX116 <- subset(Clean_data, 
+                     Turtle_ID == "X116")
+ turtleX116  <- mutate(turtleX116, NumDays = Capture_Date - Capture_Date[1])
+
+known_SCLs <- filter(turtleX116, 
+                     Capture_Date == as.Date("2006-02-01") |
+                      Capture_Date == as.Date("2007-01-23"))
+
+dif_SCL <- known_SCLs[2, 'SCL'] - known_SCLs[1, "SCL"]
+
+dif_days <- known_SCLs[2, 'Capture_Date'] - known_SCLs[1, "Capture_Date"]
+
+dif_days2 <- turtleX116[6, "Capture_Date"] - as.Date("2007-01-23")
+
+growth <- as.numeric(dif_days2) * dif_SCL/as.numeric(dif_days)
+
+interp_SCL3 <- turtleX116[5, "SCL"] + growth
+
+Clean_data$SCL2[363] <- interp_SCL3
+Clean_data
+
+```
+
+```{r curious case of the shrinking turtle}
+turtle126516364A <- subset(Turtle_data3, 
+                     Turtle_ID == "126516364A")
+turtle126516364A
+ggplot(data = turtle126516364A) +
+   geom_point(aes(x = Capture_Date, y = SCL)) + 
+  geom_line(aes(x = Capture_Date, y = SCL), na.rm = T) + 
+  labs(x = "Date", y = "SCL (cm)")
+
+ggplot(data = turtle126516364A) +
+   geom_point(aes(x = Capture_Date, y = Weight)) + 
+  geom_line(aes(x = Capture_Date, y = Weight), na.rm = T) + 
+  labs(x = "Date", y = "Weight")
+
+turtle126516364A <- mutate(turtle126516364A, NumDays = Capture_Date - Capture_Date[1])
+
+known_SCLs <- filter(turtle126516364A, 
+                     Capture_Date == as.Date("2006-02-01") |
+                      Capture_Date == as.Date("2007-03-07"))
+
+dif_SCL <- known_SCLs[2, 'SCL'] - known_SCLs[1, "SCL"]
+
+dif_days <- known_SCLs[2, 'Capture_Date'] - known_SCLs[1, "Capture_Date"]
+
+dif_days2 <- turtle126516364A[2, "Capture_Date"] - as.Date("2004-11-18")
+
+growth <- as.numeric(dif_days2) * dif_SCL/as.numeric(dif_days)
+
+interp_SCL <- turtle126516364A[2, "SCL"] - growth
+
+turtle126516364A[1, "SCL"  ] <- interp_SCL
+
+ggplot(data =turtle126516364A) + 
+  geom_point(aes(x = Capture_Date, y = SCL)) + 
+  geom_line(aes(x = Capture_Date, y = SCL), na.rm = T) + 
+  labs(x = "Date", y = "SCL (cm)")
+```
+From here on: all NAs have been taken care of in the SCL2 column that can be fixed, na.rm will be used to omit the remaining 6 values
+```{r Clean 1990-99}
+Clean_1990_99 <- Clean_data %>% filter(Yr <= 1999)
+ggplot(data=Clean_1990_99, aes(x=SCL2)) +
+  geom_histogram(color="aquamarine4", fill="aquamarine", binwidth=5, na.rm=T)+
+  labs(title="Distribution for 1990-199", x="SCL(cm)", y="Frequency")+
+  geom_vline(aes(xintercept=mean(Clean_1990_99$SCL2, na.rm=T)), color="coral1", linetype="dashed", size=1, na.rm=T)
+
+```
+```{r Clean 2000-2004}
+Clean_2000_04 <- Clean_data %>% filter(Yr >=2000) %>% filter (Yr <=2004)
+ggplot(data=Clean_2000_04, aes(x=SCL2)) +
+  geom_histogram(color="aquamarine4", fill="aquamarine", binwidth=5, na.rm=T)+
+  labs(title="Distribution for 2000-2004", x="SCL(cm)", y="Frequency")+
+  geom_vline(aes(xintercept=mean(Clean_2000_04$SCL2, na.rm=T)), color="coral1", linetype="dashed", size=1, na.rm=T)
+
+```
+
+```{r Clean 2005-2009}
+Clean_2005_09 <- Clean_data %>% filter(Yr >=2005) %>% filter (Yr <=2009)
+ggplot(data=Clean_2005_09, aes(x=SCL2)) +
+  geom_histogram(color="aquamarine4", fill="aquamarine", binwidth=5, na.rm=T)+
+  labs(title="Distribution for 2005-2009", x="SCL(cm)", y="Frequency")+
+  geom_vline(aes(xintercept=mean(Clean_2005_09$SCL2, na.rm=T)), color="coral1", linetype="dashed", size=1, na.rm=T)
+
+
+```
+
+```{r Clean 2010-2014}
+Clean_2010_14 <- Clean_data %>% filter(Yr >=2010) %>% filter (Yr <=2014)
+ggplot(data=Clean_2010_14, aes(x=SCL2)) +
+  geom_histogram(color="aquamarine4", fill="aquamarine", binwidth=5, na.rm=T)+
+  labs(title="Distribution for 2010-2014", x="SCL(cm)", y="Frequency")+
+  geom_vline(aes(xintercept=mean(Clean_2010_14$SCL2, na.rm=T)), color="coral1", linetype="dashed", size=1, na.rm=T)
+
+
+```
+```{r Clean 2015-2019}
+Clean_2015_19 <- Clean_data %>% filter(Yr >=2015) 
+ggplot(data=Clean_2015_19, aes(x=SCL2)) +
+  geom_histogram(color="aquamarine4", fill="aquamarine", binwidth=5, na.rm=T)+
+  labs(title="Distribution for 2015-2019", x="SCL(cm)", y="Frequency")+
+  geom_vline(aes(xintercept=mean(Clean_2015_19$SCL2, na.rm=T)), color="coral1", linetype="dashed", size=1, na.rm=T)
+
+```
+```{r practice density distribution}
+ggplot(data=Clean_2015_19, aes(x=SCL2)) +
+  geom_histogram(aes(y=..density..), color="aquamarine4", fill="aquamarine", binwidth=5, na.rm=T)+
+  labs(title="Distribution for 2015-2019", x="SCL(cm)", y="Frequency")+
+  geom_vline(aes(xintercept=mean(Clean_2015_19$SCL2, na.rm=T)), color="coral1", linetype="dashed", size=1, na.rm=T)+
+  geom_density(alpha=0.3, fill="azure4", na.rm=T)
+
+```
+6/19/19-6/20/19
+How many turtles are we seeing for the first time each year? Is that increasing at all?
+```{r Newcomers}
+ggplot(data=first_appearance, aes(x=firstDate))+
+  geom_histogram(color="black", fill="coral", binwidth = 1)+
+  labs(title="First appearance of turtles by year", x="Year", y="Count")
+```
+HOw big are turtles when they first come into SDB? Could that help define what we mean by small turtles or how we look at recruitment?
+```{r size of newcomers}
+First_size <- Clean_data %>% group_by(Turtle_ID) %>% summarize(firstSCL=first(SCL2), firstCapture=first(Capture_Date), firstYear=first(Yr))
+data.frame(First_size)
+ggplot(data=First_size, aes(x=firstSCL), na.rm=T)+
+  geom_histogram(color="black", fill="coral2",binwidth=5)+
+  labs(main="Size of turtles at first appearance", x="Size(cm)", y="frequency")+
+  geom_vline(aes(xintercept=mean(First_size$firstSCL, na.rm=T)), color="blue", linetype="dashed", size=1, na.rm=T)
+```
+6/21/19
+Mean size of turtles in SDB since 1990s always falls between 80-90cm, but the number of smaller turtles increases in more recent years. How many turtles come in each year below the average size?
+```{r below average turtles by year}
+Clean_data %>% group_by(Turtle_ID) %>% filter(SCL2 <= 85) -> under85cm_turtles
+ggplot(data=under85cm_turtles, aes(x=Yr), na.rm=T)+
+  geom_histogram(color="black", fill="darkseagreen3", binwidth=1)+
+  labs(main="Turtles below 85cm", x="Year", y="Count")
+```
+
